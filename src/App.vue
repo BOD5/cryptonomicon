@@ -1,5 +1,30 @@
 <template>
   <div class="container mx-auto flex flex-col items-center bg-gray-100 p-4">
+    <div
+      v-if="!tockenList"
+      class="fixed w-100 h-100 opacity-80 bg-purple-800 inset-0 z-50 flex items-center justify-center"
+    >
+      <svg
+        class="animate-spin -ml-1 mr-3 h-12 w-12 text-white"
+        xmlns="http://www.w3.org/2000/svg"
+        fill="none"
+        viewBox="0 0 24 24"
+      >
+        <circle
+          class="opacity-25"
+          cx="12"
+          cy="12"
+          r="10"
+          stroke="currentColor"
+          stroke-width="4"
+        ></circle>
+        <path
+          class="opacity-75"
+          fill="currentColor"
+          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+        ></path>
+      </svg>
+    </div>
     <div class="container">
       <section>
         <div class="flex">
@@ -10,6 +35,7 @@
             <div class="mt-1 relative rounded-md shadow-md">
               <input
                 v-model="ticker"
+                @keyup="writeTicker"
                 @keyup.enter="add"
                 type="text"
                 name="wallet"
@@ -17,6 +43,22 @@
                 class="block w-full pr-10 border-gray-300 text-gray-900 focus:outline-none focus:ring-gray-500 focus:border-gray-500 sm:text-sm rounded-md"
                 placeholder="Например DOGE"
               />
+            </div>
+            <div
+              v-if="help.length > 0"
+              class="flex bg-white shadow-md p-1 rounded-md flex-wrap"
+            >
+              <span
+                v-for="(h, idx) in help"
+                :key="idx"
+                @click="selectHelp(h)"
+                class="inline-flex items-center px-2 m-1 rounded-md text-xs font-medium bg-gray-300 text-gray-800 cursor-pointer"
+              >
+                {{ h }}
+              </span>
+            </div>
+            <div v-if="isContaine" class="text-sm text-red-600">
+              Такой тикер уже добавлен
             </div>
           </div>
         </div>
@@ -134,15 +176,38 @@ export default {
       tickers: [],
       selectedTocken: null,
       graph: [],
+      tockenList: null,
+      help: [],
+      isContaine: false,
     };
   },
-
+  created: async function () {
+    const f = await fetch(
+      "https://min-api.cryptocompare.com/data/all/coinlist?summary=true"
+    );
+    const data = f.json();
+    data.then((d) => {
+      // this.tockenList = Object.keys(d.Data);
+      this.tockenList = d.Data;
+      console.log(" - d.Data:186 >", d.Data); // eslint-disable-line no-console
+      // console.log(' - this.tockenList:187 >', this.tockenList); // eslint-disable-line no-console
+    });
+  },
   methods: {
     add() {
+      const tickerName = this.ticker.toUpperCase();
+      if (!this.tockenList[`${tickerName}`]) {
+        alert("unavaible token");
+        return;
+      }
       const currentTicker = {
-        name: this.ticker,
+        name: tickerName,
         price: "-",
       };
+      if (this.tickers.find((t) => t.name === tickerName)) {
+        this.isContaine = true;
+        return;
+      }
       this.tickers.push(currentTicker);
       setInterval(async () => {
         const f = await fetch(
@@ -155,6 +220,7 @@ export default {
           this.graph.push(data.USD);
       }, 5000);
       this.ticker = "";
+      this.help = [];
     },
     remove(removedTicker) {
       this.tickers = this.tickers.filter((t) => t !== removedTicker);
@@ -172,6 +238,22 @@ export default {
       return this.graph.map((p) => {
         return max === min ? 5 : 5 + ((p - min) / (max - min)) * 95;
       });
+    },
+    writeTicker() {
+      const name = this.ticker.toUpperCase();
+      if (this.isContaine) this.isContaine = false;
+      this.help =
+        name === ""
+          ? []
+          : Object.keys(this.tockenList)
+              .filter((tk) => {
+                return tk.indexOf(`${name}`) !== -1;
+              })
+              .slice(0, 4);
+    },
+    selectHelp(h) {
+      this.ticker = h;
+      this.add();
     },
   },
 };
