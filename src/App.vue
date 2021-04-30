@@ -117,6 +117,7 @@
             @click="selectTocken(t)"
             :class="{
               'border-4': selectedTocken === t,
+              'bg-red-100': t.price === '-',
             }"
             class="bg-white overflow-hidden shadow rounded-lg border-purple-800 border-solid cursor-pointer"
           >
@@ -298,23 +299,27 @@ export default {
       return price < 1 ? price.toPrecision(2) : price.toFixed(2);
     },
 
+    updateTickerPrice(ticker, newPrice) {
+      if (ticker.price !== newPrice) {
+        ticker.price = newPrice;
+        if (this.selectedTocken === ticker) {
+          this.graph.push(newPrice);
+        }
+      }
+    },
+
     createTickerUpdater(ticker) {
       subscribeToTicker(ticker.name, (newPrice) => {
-        if (ticker.price !== newPrice) {
-          ticker.price = newPrice;
-          if (this.selectedTocken === ticker) {
-            this.graph.push(newPrice);
-          }
-        }
+        this.updateTickerPrice(ticker, newPrice);
       });
     },
 
     add() {
       const tickerName = this.ticker.toUpperCase();
-      if (!this.tockenList[`${tickerName}`]) {
-        alert("unavaible token");
-        return;
-      }
+      // if (!this.tockenList[`${tickerName}`]) {
+      //   alert("unavaible token");
+      //   return;
+      // }
       const currentTicker = {
         name: tickerName,
         price: "-",
@@ -331,7 +336,9 @@ export default {
 
     remove(removedTicker) {
       this.tickers = this.tickers.filter((t) => t !== removedTicker);
-      unsubscribeFromTicker(removedTicker.name);
+      unsubscribeFromTicker(removedTicker.name, (newPrice) => {
+        this.updateTickerPrice(removedTicker, newPrice);
+      });
       if (this.selectedTocken === removedTicker) this.selectedTocken = null;
     },
     selectTocken(tocken) {
