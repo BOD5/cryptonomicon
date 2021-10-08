@@ -8,6 +8,8 @@ const socket = new WebSocket(
   `wss://streamer.cryptocompare.com/v2?api_key=${API_KEY}`
 );
 
+// eslint-disable-next-line no-unused-vars
+
 const VALUTE = "USD";
 
 const AGGREGATE_INDEX = "5";
