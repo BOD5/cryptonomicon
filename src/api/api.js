@@ -1,5 +1,4 @@
-const API_KEY =
-  "0c8498c1e018505123ee1bcdf7dd5ec877a8313a266d8e28341ac885f46d9614";
+import { API_KEY } from "../config";
 
 const tickersHandlers = new Map();
 const tickerPrices = new Map();
